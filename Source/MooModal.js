@@ -443,6 +443,7 @@ Modal.Request = new Class({
   },
 
   load : function(url,options) {
+    this.cancel();
     options = $extend(options || {},{
       onRequest : this.onRequest.bind(this),
       onCancel : this.onCancel.bind(this),
