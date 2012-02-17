@@ -502,7 +502,8 @@ Modal.Request = new Class({
   },
 
   onRequest : function() {
-    this.fireEvent('requestRequest');
+    this.show();
+    this.fireEvent('requestRequest',[this.getStage()]);
   }
 
 });
