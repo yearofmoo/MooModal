@@ -25,7 +25,8 @@ Modal = new Class({
       y : -9999
     },
     fxOptions : {
-      transition: 'circ:in'
+      transition: 'circ:in',
+      link:'cancel'
     },
     loadingOptions : {
 
@@ -443,8 +444,9 @@ Modal.Request = new Class({
   },
 
   load : function(url,options) {
+    alert('a');
     this.cancel();
-    options = $extend(options || {},{
+    options = Object.append(options || {},{
       onRequest : this.onRequest.bind(this),
       onCancel : this.onCancel.bind(this),
       onSuccess : function(content) {
