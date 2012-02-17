@@ -28,6 +28,9 @@ Modal = new Class({
       transition: 'circ:in',
       link:'cancel'
     },
+    overlayFxOptions : {
+      link:'cancel'
+    },
     loadingOptions : {
 
     }
@@ -124,6 +127,7 @@ Modal = new Class({
       this.overlay = new Element('div',{
         'class' : klass + '-overlay',
         'styles':{
+          'opacity':0,
           'display':'none',
           'position':abs,
           'top':0,
@@ -154,11 +158,9 @@ Modal = new Class({
 
       this.overlay.setStyles(this.options.overlayStyles);
       overlay.setStyles({
-        'opacity':0,
         'display':'block',
         'z-index':this.options.overlayZIndex
       });
-
 
       if(this.options.overlayActsAsHide) {
         overlay.setStyle('cursor','pointer');
@@ -167,7 +169,10 @@ Modal = new Class({
         overlay.setStyle('opacity',o);
       }
       else {
-        overlay.get('tween').start('opacity',[0,o]).chain(function() {
+        overlay.set('morph',this.options.overlayFxOptions);
+        overlay.get('morph').start({
+          'opacity':o
+        }).chain(function() {
           this.showOverlay(true);
         }.bind(this));
       }
@@ -182,7 +187,9 @@ Modal = new Class({
         overlay.setStyle('display','none');
       }
       else {
-        overlay.get('tween').start('opacity',0).chain(function() {
+        overlay.get('morph').start({
+          'opacity':0
+        }).chain(function() {
           this.hideOverlay(true);
         }.bind(this));
       }
