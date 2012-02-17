@@ -444,7 +444,6 @@ Modal.Request = new Class({
   },
 
   load : function(url,options) {
-    alert('a');
     this.cancel();
     options = Object.append(options || {},{
       onRequest : this.onRequest.bind(this),
