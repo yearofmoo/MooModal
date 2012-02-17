@@ -50,9 +50,16 @@
 .modal-close {
   width:30px;
   height:30px;
-  background:url('close.png') no-repeat 0 0;
+  background:url('images/close.png') no-repeat 0 0;
   cursor:pointer;
   display:block;
   top:-20px;
   right:-20px;
+}
+
+.modal-loading {
+  background-image:url('images/spinner.gif');
+  background-position:15px center;
+  padding:20px 60px;
+  background-repeat:no-repeat;
 }

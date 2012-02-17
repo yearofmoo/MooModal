@@ -422,9 +422,30 @@ Modal.Request = new Class({
 
   Extends : Modal,
 
+  options : {
+    showModalWhenOnRequest : true,
+    requestLoadingMessage : 'Loading Please Wait...',
+    requestLoadingClassName : 'modal-loading'
+  },
+
+  initialize : function(options) {
+    this.parent(options);
+  },
+
+  hideEverything : function() {
+    var req = this.getRequest();
+    if(req) {
+      req.cancel();
+    }
+    else {
+      this.parent();
+    }
+  },
+
   load : function(url,options) {
     options = $extend(options || {},{
       onRequest : this.onRequest.bind(this),
+      onCancel : this.onCancel.bind(this),
       onSuccess : function(content) {
         this.onSuccess(content); 
       }.bind(this),
@@ -437,6 +458,10 @@ Modal.Request = new Class({
     }
 
     this.request = new Request(options).send();
+  },
+
+  getRequest : function() {
+    return this.request;
   },
   
   filterContent : function(html) {
@@ -466,18 +491,20 @@ Modal.Request = new Class({
       this.getStage().tween('background-color',['#eeeeee','#ffffff']);
     }
 
-    var C = function() {
-      this.positionInCenter();
-      this.showEverything();
-      this.fireEvent('requestSuccess');
-      this.onComplete();
-    }.bind(this);
-
     var response = this.filterContent(html);
     var content = response.content;
     var assets = response.assets;
 
-    this.getStage().empty().adopt(content);
+    var stage = this.getStage();
+    stage.empty();
+    if(typeOf(content) == 'string') {
+      stage.set('html',content);
+    }
+    else {
+      stage.adopt(content);
+    }
+
+    var C = this.onContentReady.bind(this);
     if(assets.length > 0) {
       Assets.loadAll(assets,{ 'class':'page-specific modal-specific' },C);
     }
@@ -487,6 +514,51 @@ Modal.Request = new Class({
   },
 
   onContentReady : function() {
+    var stage = this.getStage();
+    if(this.options.showModalWhenOnRequest) {
+      var className = this.options.requestLoadingClassName;
+      if(className) {
+        stage.removeClass(className);
+      }
+    }
+
+    stage.addClass('stage-ready');
+
+    this.positionInCenter();
+    this.showEverything();
+    this.fireEvent('requestSuccess',[stage]);
+    this.onComplete();
+  },
+
+  onRequest : function() {
+    var stage = this.getStage();
+    if(this.options.showModalWhenOnRequest) {
+      var message = this.options.requestLoadingMessage;
+      if(this.options.requestLoadingMessage) {
+        stage.set('html',message);
+      }
+
+      var className = this.options.requestLoadingClassName;
+      if(className) {
+        stage.addClass(className);
+      }
+
+      this.positionInCenter();
+      this.showEverything();
+    }
+    this.fireEvent('requestRequest',[stage]);
+  },
+
+  onCancel : function() {
+    delete this.request;
+    this.hideEverything();
+  },
+
+  cancel : function() {
+    var req = this.getRequest();
+    if(req) {
+      req.cancel();
+    }
   },
 
   onFailure : function() {
@@ -498,12 +570,8 @@ Modal.Request = new Class({
   },
 
   onComplete : function() {
+    delete this.request;
     this.fireEvent('requestComplete');
-  },
-
-  onRequest : function() {
-    this.show();
-    this.fireEvent('requestRequest',[this.getStage()]);
   }
 
 });

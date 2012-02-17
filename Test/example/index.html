@@ -1,0 +1,39 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+<title>Untitled Document</title> 
+<link rel="stylesheet" type="text/css" href="../../Source/MooModal.css" />
+</head> 
+
+<body id="" class=""> 
+  <div id="wrapper">
+    <a href="#" id="show-modal">Show Modal</a> 
+  </div>
+<script type="text/javascript" src="../Assets/MooTools-core.js"></script>
+<script type="text/javascript" src="../Assets/MooTools-more.js"></script>
+<script type="text/javascript" src="../../Source/MooModal.js"></script>
+<script type="text/javascript">
+window.addEvent('domready',function() {
+
+  var url = './ajax.php';
+
+  var modal = new Modal.Request({
+
+  });
+
+  modal.filterContent = function(html) {
+    return {
+      content : html,
+      assets : []
+    };
+  }
+
+  $('show-modal').addEvent('click',function(event) {
+    event.stop();
+    modal.load(url);
+  });
+
+});
+</script>
+</body>
+</html> 
