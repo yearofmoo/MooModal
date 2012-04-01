@@ -515,7 +515,9 @@ Modal.Request = new Class({
 
     var C = this.onContentReady.bind(this);
     if(assets.length > 0) {
-      Assets.loadAll(assets,{ 'class':'page-specific modal-specific' },C);
+      Asset.load(assets,{
+        onReady : C 
+      });
     }
     else {
       C();
