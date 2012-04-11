@@ -68,7 +68,7 @@ MooModal.Overlay = new new Class({
     elementOptions : {
       'class' : 'MooModal-overlay',
       'styles' : {
-        'position':'absolute',
+        'position':'fixed',
         'z-index' : 1000,
         'background-color':'#000000'
       }
