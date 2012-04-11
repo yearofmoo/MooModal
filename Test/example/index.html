@@ -1,36 +1,85 @@
 <!DOCTYPE html> 
 <html lang="en"> 
 <head> 
+<style type="text/css">
+nav {
+  background:black;
+  padding:1em;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:10000;
+}
+nav a {
+  color:white;
+  display:inline-block;
+  padding:0 10px;
+  text-decoration:none;
+}
+</style>
 <title>Untitled Document</title> 
 <link rel="stylesheet" type="text/css" href="../../Source/MooModal.css" />
 </head> 
 
 <body id="" class=""> 
   <div id="wrapper">
-    <a href="#" id="show-modal">Show Modal</a> 
+    <nav class="actions">
+      <a href="#" id="show-modal">Show Modal #1</a> 
+      <a href="#" id="show-modal2">Show Modal #2</a> 
+      <a href="#" id="show-image">Show Image Modal</a> 
+    </nav>
   </div>
-<script type="text/javascript" src="../Assets/MooTools-core.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/mootools/1.4.5/mootools-yui-compressed.js"></script>
 <script type="text/javascript" src="../Assets/MooTools-more.js"></script>
+<script type="text/javascript" src="../../Source/XView.js/Source/XView.js"></script>
+<script type="text/javascript" src="../../Source/MooTools-Asset.Extras.js/Source/Asset.Extras.js"></script>
 <script type="text/javascript" src="../../Source/MooModal.js"></script>
 <script type="text/javascript">
 window.addEvent('domready',function() {
 
   var url = './ajax.php';
+  var url2 = './ajax2.php?123';
+  var url3 = 'http://www.popcrunch.com/wp-content/uploads/2010/10/68692EP_DAMME_B-GR_02-500x711.jpg';
 
-  var modal = new Modal.Request({
-
+  var modal = new MooModal.Request({
+    overlayOptions : {
+      reveal : {
+        'backgroundColor' : '#990000',
+        opacity : 0.5
+      }
+    }
   });
 
-  modal.filterContent = function(html) {
-    return {
-      content : html,
-      assets : []
-    };
-  }
+  var modal2 = new MooModal.Request({
+    overlayOptions : {
+      reveal : {
+        opacity : 0.8
+      }
+    }
+  });
+
+  var image = new MooModal.Image({
+    overlayOptions : {
+      reveal : {
+        opacity : 0.8
+      }
+    }
+  });
 
   $('show-modal').addEvent('click',function(event) {
     event.stop();
     modal.load(url);
+  });
+
+  $('show-modal2').addEvent('click',function(event) {
+    event.stop();
+    modal2.load(url2);
+  });
+
+  $('show-image').addEvent('click',function(event) {
+    event.stop();
+    image.load(url3);
   });
 
 });

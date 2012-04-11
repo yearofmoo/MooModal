@@ -1,8 +1,288 @@
-var Modal;
+var MooModal;
 
 (function($,$$) {
 
-Modal = new Class({
+MooModal = new Class;
+
+MooModal.extend({
+
+  instances : {},
+
+  getInstance : function(id) {
+    return this.instances[id];
+  },
+
+  getInstances : function() {
+    return this.instances;
+  },
+
+  instance : function(instance) {
+    return instanceOf(instance,MooModal) ? instance : this.getInstance(instance);
+  },
+
+  registerInstance : function(instance) {
+    this.instances[instance.getID()]=instance;
+  },
+
+  destroyInstance : function(instance) {
+    instance = this.instance(instance);
+    var id = instance.getID();
+    delete this.instances[id];
+    instance.destroy();
+  },
+
+  onBeforeShow : function(instance,fn) {
+    instance.isShowing() ? fn() : this.hideAll(fn);
+  },
+
+  hideAll : function(fn) {
+    var visible = this.getVisibleInstance();
+    if(visible) {
+      visible.addEvent('afterHide:once',fn);
+      visible.dissolve();
+    }
+    else {
+      fn();
+    }
+  },
+
+  getVisibleInstance : function() {
+    var instances = this.getInstances();
+    for(var i in instances) {
+      var instance = instances[i];
+      if(instance.isShowing()) {
+        return instance;
+      }
+    }
+  }
+
+});
+
+MooModal.Overlay = new new Class({
+
+  Binds : ['onClick','onHide','onShow','show','hide'],
+
+  Implements : [Options, Events],
+
+  options : {
+    elementOptions : {
+      'class' : 'MooModal-overlay',
+      'styles' : {
+        'position':'absolute',
+        'z-index' : 1000,
+        'background-color':'#000000'
+      }
+    },
+    animationOptions : {
+      link : 'cancel',
+      reveal : {
+        opacity : [0,0.5]
+      }
+    },
+    fxOptions : {
+
+    }
+  },
+
+  init : function(options) {
+    this.defaultOptions = Object.clone(this.options);
+    this.events = {};
+    this.setOptions(options);
+    this.build();
+    this.setupEvents();
+    this.setOpacity(0);
+    this.hide();
+    this.init = function() {};
+  },
+
+  getDefaultOptions : function() {
+    return this.defaultOptions;
+  },
+
+  setup : function(options) {
+    this.setOptions(options);
+    this.getElement().set(this.options.elementOptions);
+  },
+
+  focusOn : function(instance) {
+    this.activeInstance = instance;
+    this.setup(instance.overlayOptions);
+  },
+
+  getActiveInstance : function() {
+    return this.activeInstance;
+  },
+
+  build : function() {
+    this.element = new Element('div').set(this.options.elementOptions).inject(document.body);
+  },
+
+  setupEvents : function() {
+    this.getElement().addEvents({
+      'click':this.onClick
+    });
+  },
+
+  onClick : function(event) {
+    event.stop();
+    this.dissolve();
+  },
+
+  getElement : function() {
+    return this.element;
+  },
+
+  getAnimator : function() {
+    if(!this.animator) {
+      this.animator = new Fx.Morph(this.getElement(),this.options.fxOptions);
+    }
+    return this.animator;
+  },
+
+  toElement : function() {
+    return this.getElement();
+  },
+
+  show : function() {
+    this.onBeforeShow();
+    var styles = Object.clone(this.options.animationOptions.reveal);
+    styles.opacity = this.parseEndOpacity(styles.opacity);
+    styles.display = 'block';
+    this.getElement().setStyles(styles);
+    this.onShow();
+    this.onAfterShow();
+  },
+
+  hide : function() {
+    this.onBeforeHide();
+    var styles = Object.clone(this.options.animationOptions.dissolve);
+    styles.opacity = this.parseEndOpacity(styles.opacity);
+    this.getElement().setStyles(styles);
+    this._hide();
+    this.onHide();
+    this.onAfterHide();
+  },
+
+  _hide : function() {
+    this.getElement().setStyle('display','none');
+  },
+
+  _show : function() {
+    this.getElement().setStyle('display','block');
+  },
+
+  dissolve : function(options) {
+    this.onBeforeHide();
+    this.transform(options || this.options.animationOptions.dissolve).chain(function() {
+      this.onHide();
+      this._hide();
+      this.afterHide();
+    }.bind(this));
+  },
+
+  reveal : function(options) {
+    this.onBeforeShow();
+    options = options || this.options.animationOptions.reveal;
+    if(this.isVisible()) {
+      options.opacity = this.parseEndOpacity(options.opacity);
+    }
+    else {
+      this._show();
+    }
+    this.transform(options).chain(function() {
+      this.onShow();
+      this._show();
+      this.onAfterShow();
+    }.bind(this));
+  },
+
+  transform : function(options) {
+    return this.getAnimator().start(options);
+  },
+
+  getOpacity : function() {
+    return this.getElement().getStyle('opacity');
+  },
+
+  setOpacity : function(o) {
+    this.getElement().setStyle('opacity',0);
+  },
+
+  parseEndOpacity : function(opacity) {
+    return typeOf(opacity) == 'array' ? opacity.getLast() : opacity;
+  },
+
+  isVisible : function() {
+    return this.getElement().getStyle('display') == 'block';
+  },
+
+  isHidden : function() {
+    return ! this.isVisible();
+  },
+
+  position : function() {
+    this.getElement().setStyles({
+      'top':0,
+      'left':0,
+      'right':0,
+      'bottom':0
+    });
+  },
+
+  onHide : function() {
+    this.fireEvent('hide');
+    this.fireInstanceEvent('hide');
+  },
+
+  onAfterHide : function() {
+    this.fireEvent('afterHide');
+    this.fireInstanceEvent('afterHide');
+  },
+
+  onBeforeHide : function() {
+    this.fireEvent('beforeHide');
+    this.fireInstanceEvent('beforeHide');
+  },
+
+  onShow : function() {
+    this.fireEvent('show');
+    this.fireInstanceEvent('show');
+  },
+
+  onAfterShow : function() {
+    this.fireEvent('afterShow');
+    this.fireInstanceEvent('afterShow');
+  },
+
+  onBeforeShow : function() {
+    this.fireEvent('beforeShow');
+    this.fireInstanceEvent('beforeShow');
+  },
+
+  fireInstanceEvent : function(event,id) {
+    try {
+      this.getInstanceEvents(id)[event].call();
+    }
+    catch(e){};
+  },
+
+  getInstanceEvents : function(id) {
+    try {
+      id = id || this.getActiveInstance().id;
+      return this.events[id] || {};
+    }
+    catch(e) {};
+  },
+
+  registerEvents : function(instance,events) {
+    this.events[instance.getID()] = events;
+  }
+
+});
+
+MooModal.implement({
+
+  Binds : ['onContentReady','show','hide','reveal','dissolve'],
 
   Implements : [Options, Events],
 
@@ -11,24 +291,18 @@ Modal = new Class({
     width : 700,
     height : 500,
     zIndex : 2000,
-    closeModalGraphic : true,
+    closeMooModalGraphic : true,
     overlay : true,
-    overlayOpacity : 0.5,
-    overlayZIndex : 1000,
-    overlayStyles : {
-      'background-color':'#000000'
-    },
-    overlayActsAsHide : true,
     escapeKeyActsAsHide : true,
     hidePositions : {
       x : -9999,
       y : -9999
     },
+    overlayOptions : {
+
+    },
     fxOptions : {
       transition: 'circ:in',
-      link:'cancel'
-    },
-    overlayFxOptions : {
       link:'cancel'
     },
     loadingOptions : {
@@ -39,6 +313,32 @@ Modal = new Class({
   initialize : function(options) {
     this.setOptions(options);
 
+    MooModal.registerInstance(this);
+    MooModal.Overlay.init();
+
+    this.build();
+    this.getContainer().store('MooModal',this);
+    this.setupEvents();
+    this.resize();
+    this.hide();
+  },
+
+  build : function() {
+    this.buildElement();
+    this.buildOverlay();
+    this.buildStage();
+  },
+
+  buildOverlay : function() {
+    if(!this.options.overlayOptions) {
+      this.options.overlayOptions = MooModal.Overlay.getDefaultOptions();
+    }
+    else {
+      MooModal.Overlay.setup(this.options.overlayOptions);
+    }
+  },
+
+  buildElement : function() {
     var klass = this.options.className;
     this.container = new Element('div',{
       'class' : klass + ' ' + klass + '-container',
@@ -47,8 +347,10 @@ Modal = new Class({
         'z-index' : this.options.zIndex
       }
     }).inject(document.body);
-    this.container.store('Modal',this);
+  },
 
+  buildStage : function() {
+    var klass = this.options.className;
     this.stage = new Element('div',{
       'class': klass + '-stage',
       'styles':{
@@ -58,9 +360,10 @@ Modal = new Class({
         'bottom':0
       }
     }).inject(this.container);
+
     this.stage.set('spinner',{
       'class':klass+'-spinner',
-      style : {
+      'style' : {
         'opacity':0.3,
         'background-color':'#ffffff',
         'left':0,
@@ -68,7 +371,7 @@ Modal = new Class({
       }
     });
 
-    this.closeModal = new Element('div',{
+    this.closeMooModal = new Element('div',{
       'class': klass + '-close',
       'styles':{
         'position':'absolute'
@@ -77,13 +380,9 @@ Modal = new Class({
         'click':this.hideEverything.bind(this)
       }
     }).injectInside(this.container);
+  },
 
-    this.animator = new Fx.Morph(this.container,this.options.fxOptions);
-    this.resize(this.options.width,this.options.height);
-
-    this.getContainer().setStyle('display','none');
-    this.position(this.options.hidePositions.x,this.options.hidePositions.y);
-
+  setupEvents : function() {
     window.addEvent('keydown',function(event) {
       if(this.options.escapeKeyActsAsHide) {
         var key = event.key;
@@ -93,6 +392,18 @@ Modal = new Class({
         }
       }
     }.bind(this));
+
+    this.getOverlay().registerEvents(this,{
+      beforeHide : this.dissolve
+    });
+  },
+
+  getID : function() {
+    if(!this.id) {
+      var rand = Number.random(0,1000);
+      this.id = 'MooModal-' + (new Date().getTime()) + '-' + rand;
+    }
+    return this.id;
   },
 
   position : function(x,y) {
@@ -120,80 +431,27 @@ Modal = new Class({
     return this.getDimensions().height;
   },
 
-  getOverlay : function() {
-    if(!this.overlay) {
-      var klass = this.options.className;
-      var abs = Browser.ie6 ? 'absolute' : 'fixed';
-      this.overlay = new Element('div',{
-        'class' : klass + '-overlay',
-        'styles':{
-          'opacity':0,
-          'display':'none',
-          'position':abs,
-          'top':0,
-          'left':0,
-          'right':0,
-          'bottom':0
-        }
-      }).inject(document.body);
+  disableOverlay : function() {
+    this.options.overlay = false;
+  },
 
-      this.overlay.addEvent('click',function(event) {
-        if(this.options.overlayActsAsHide) {
-          this.hideEverything();
-        }
-      }.bind(this));
-    }
-    return this.overlay;
+  enableOverlay : function() {
+    this.options.overlay = true;
+  },
+
+  getOverlay : function() {
+    return MooModal.Overlay;
   },
 
   showOverlay : function(fast) {
-    if(this.options.overlay) {
-
-      fast = fast === true;
-      var overlay = this.getOverlay();
-      var o = this.options.overlayOpacity || 0.5;
-      if(overlay.getStyle('display') == 'block' && overlay.getStyle('opacity')==o) {
-        return;
-      }
-
-      this.overlay.setStyles(this.options.overlayStyles);
-      overlay.setStyles({
-        'display':'block',
-        'z-index':this.options.overlayZIndex
-      });
-
-      if(this.options.overlayActsAsHide) {
-        overlay.setStyle('cursor','pointer');
-      }
-      if(fast) {
-        overlay.setStyle('opacity',o);
-      }
-      else {
-        overlay.set('morph',this.options.overlayFxOptions);
-        overlay.get('morph').start({
-          'opacity':o
-        }).chain(function() {
-          this.showOverlay(true);
-        }.bind(this));
-      }
-    }
+    MooModal.Overlay.focusOn(this);
+    var overlay = this.getOverlay();
+    overlay.position();
+    overlay[fast ? 'show' : 'reveal'](this.options.overlayOptions.reveal);
   },
 
   hideOverlay : function(fast) {
-    var overlay = this.getOverlay();
-    fast = fast === true;
-    if(overlay.getStyle('display') == 'block') {
-      if(fast) {
-        overlay.setStyle('display','none');
-      }
-      else {
-        overlay.get('morph').start({
-          'opacity':0
-        }).chain(function() {
-          this.hideOverlay(true);
-        }.bind(this));
-      }
-    }
+    this.getOverlay()[fast ? 'hide' : 'dissolve'](this.options.overlayOptions.dissolve);
   },
 
   setHeight : function(height) {
@@ -205,8 +463,9 @@ Modal = new Class({
   },
 
   resize : function(width,height) {
-    var container = this.getContainer();
-    container.setStyles({
+    width = width || this.options.width;
+    height = height || this.options.height;
+    this.getContainer().setStyles({
       width : width
       //height : height
     });
@@ -215,6 +474,13 @@ Modal = new Class({
 
   getDimensions : function() {
     return this.toElement().getDimensions();
+  },
+
+  getAnimator : function() {
+    if(!this.animator) {
+      this.animator = new Fx.Morph(this.container,this.options.fxOptions);
+    }
+    return this.animator;
   },
 
   toElement : function() {
@@ -244,33 +510,18 @@ Modal = new Class({
     var container = this.getContainer();
   },
 
-  hideEverything : function() {
-    this.hide();
+  hideEverything : function(fast) {
+    fast ? this.hide : this.dissolve();
     if(this.options.overlay) {
-      this.hideOverlay();
+      this.hideOverlay(fast);
     }
   },
 
-  hide : function(fast) {
-    if(this.isShowing()) {
-      var H = function() {
-        this.getContainer().setStyle('display','none');
-        this.position(this.options.hidePositions.x,this.options.hidePositions.y);
-        this.fireEvent('afterHide');
-      }.bind(this);
-
-      fast = fast === true;
-      this.fireEvent('beforeHide');
-      if(fast) {
-        H();
-      }
-      else {
-        this.animator.start({
-          'opacity' : 0
-        }).chain(H);
-      }
-      this.fireEvent('hide');
-    }
+  hide : function() {
+    this.onBeforeHide();
+    this.getContainer().setStyle('display','none');
+    this.position(this.options.hidePositions.x,this.options.hidePositions.y);
+    this.onAfterHide();
   },
 
   hideAndDestroy : function() {
@@ -285,34 +536,43 @@ Modal = new Class({
   },
 
   show : function(fast) {
-    fast = fast === true;
-    var container = this.getContainer();
-    this.positionInCenter();
-    if(container.getStyle('display') == 'block' && container.getStyle('opacity')==1) {
-      return;
-    }
-    container.setStyles({
-      'opacity':0,
+    this.onBeforeShow();
+    this.getContainer().setStyles({
+      'opacity':1,
       'display':'block'
     });
-    if(fast) {
-      container.setStyle('opacity',1);
-      this.fireEvent('show');
-    }
-    else {
-      this.animator.start({
-        'opacity' : [0,1]
-      }).chain(function() {
-        this.show(true);
-      }.bind(this));
-    }
+    this.onAfterShow();
+  },
+
+  prepareAndShow : function(fn) {
+    MooModal.onBeforeShow(this,fn);
+  },
+
+  reveal : function() {
+    this.prepareAndShow(function() {
+      this.getAnimator().set({
+        'opacity' : 0,
+        'display' : 'block'
+      }).start({
+        'opacity' : 1
+      }).chain(this.show);
+    }.bind(this));
+  },
+
+  dissolve : function() {
+    this.getAnimator().start({
+      'opacity' : 0
+    }).chain(this.hide);
   },
 
   showEverything : function() {
     if(this.options.overlay) {
       this.showOverlay();
     }
-    this.show();
+    else {
+      this.hideOverlay(true);
+    }
+    this.reveal();
   },
 
   showAndPosition : function() {
@@ -320,17 +580,35 @@ Modal = new Class({
     this.showEverything();
   },
 
+  onBeforeShow : function() {
+
+  },
+
+  onBeforeHide : function() {
+
+  },
+
+  onAfterShow : function() {
+
+  },
+
+  onAfterHide : function() {
+    this.fireEvent('afterHide',[this]);
+  },
+
   destroy : function() {
+    this.destroy = function() { };
     this.getStage().destroy();
     this.getContainer().destroy();
     this.getOverlay().destroy();
+    MooModal.destroyInstance(this);
   }
 
 }); 
 
-Modal.Image = new Class({
+MooModal.Image = new Class({
 
-  Extends : Modal,
+  Extends : MooModal,
 
   options : {
     setAsLoadingWhenLoadingImage : true,
@@ -426,12 +704,12 @@ Modal.Image = new Class({
 
 });
 
-Modal.Request = new Class({
+MooModal.Request = new Class({
 
-  Extends : Modal,
+  Extends : MooModal,
 
   options : {
-    showModalWhenOnRequest : true,
+    showMooModalWhenOnRequest : true,
     requestLoadingMessage : 'Loading Please Wait...',
     requestLoadingClassName : 'modal-loading'
   },
@@ -474,23 +752,10 @@ Modal.Request = new Class({
   },
   
   filterContent : function(html) {
-    var response = Elements.from(html);
-    var content = response.getElement('.xmodal-content');
-    var meta = response.getElement('.xmodal-header');
-    var assets = [];
-    if(meta) {
-      var metaData = meta.get('html').toString();
-      metaData = JSON.decode(metaData);
-      var jsFiles = metaData['javascripts'];
-      var cssFiles = metaData['stylesheets'];
-      if(jsFiles.length + cssFiles.length > 0) {
-        assets = [jsFiles,cssFiles].flatten();
-      }
-    }
-
+    var xview = new XView(html);
     return {
-      content : content,
-      assets : assets
+      content : xview.getContent(),
+      assets : xview.getAssets()
     }
   },
 
@@ -501,9 +766,8 @@ Modal.Request = new Class({
     }
 
     var response = this.filterContent(html);
-    var content = response.content;
-    var assets = response.assets;
 
+    var content = response.content;
     var stage = this.getStage();
     stage.empty();
     if(typeOf(content) == 'string') {
@@ -513,20 +777,20 @@ Modal.Request = new Class({
       stage.adopt(content);
     }
 
-    var C = this.onContentReady.bind(this);
+    var assets = response.assets;
     if(assets.length > 0) {
       Asset.load(assets,{
-        onReady : C 
+        onReady : this.onContentReady
       });
     }
     else {
-      C();
+      this.onContentReady();
     }
   },
 
   onContentReady : function() {
     var stage = this.getStage();
-    if(this.options.showModalWhenOnRequest) {
+    if(this.options.showMooModalWhenOnRequest) {
       var className = this.options.requestLoadingClassName;
       if(className) {
         stage.removeClass(className);
@@ -534,16 +798,14 @@ Modal.Request = new Class({
     }
 
     stage.addClass('stage-ready');
-
-    this.positionInCenter();
-    this.showEverything();
+    this.showAndPosition();
     this.fireEvent('requestSuccess',[stage]);
     this.onComplete();
   },
 
   onRequest : function() {
     var stage = this.getStage();
-    if(this.options.showModalWhenOnRequest) {
+    if(this.options.showMooModalWhenOnRequest) {
       var message = this.options.requestLoadingMessage;
       if(this.options.requestLoadingMessage) {
         stage.set('html',message);
@@ -554,8 +816,7 @@ Modal.Request = new Class({
         stage.addClass(className);
       }
 
-      this.positionInCenter();
-      this.showEverything();
+      this.showAndPosition();
     }
     this.fireEvent('requestRequest',[stage]);
   },
@@ -574,8 +835,7 @@ Modal.Request = new Class({
 
   onFailure : function() {
     this.setContent('unable to load page');
-    this.positionInCenter();
-    this.showEverything();
+    this.showAndPosition();
     this.fireEvent('requestFailure');
     this.onComplete();
   },
@@ -587,9 +847,9 @@ Modal.Request = new Class({
 
 });
 
-Modal.IFrame = new Class({
+MooModal.IFrame = new Class({
 
-  Extends : Modal,
+  Extends : MooModal,
 
   options : {
     width : 800,
