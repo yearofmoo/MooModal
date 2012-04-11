@@ -60,7 +60,7 @@ MooModal.extend({
 
 MooModal.Overlay = new new Class({
 
-  Binds : ['onClick','onHide','onShow','show','hide'],
+  Binds : ['onClick','onHide','onShow','show','hide','onAnimationComplete'],
 
   Implements : [Options, Events],
 
@@ -75,6 +75,9 @@ MooModal.Overlay = new new Class({
     },
     animationOptions : {
       link : 'cancel',
+      dissolve : {
+        opacity : 0
+      },
       reveal : {
         opacity : [0,0.5]
       }
@@ -135,6 +138,9 @@ MooModal.Overlay = new new Class({
   getAnimator : function() {
     if(!this.animator) {
       this.animator = new Fx.Morph(this.getElement(),this.options.fxOptions);
+      this.animator.addEvents({
+        'complete':this.onAnimationComplete
+      });
     }
     return this.animator;
   },
@@ -173,11 +179,13 @@ MooModal.Overlay = new new Class({
 
   dissolve : function(options) {
     this.onBeforeHide();
-    this.transform(options || this.options.animationOptions.dissolve).chain(function() {
-      this.onHide();
-      this._hide();
-      this.afterHide();
-    }.bind(this));
+    this.transform('dissolve',options || this.options.animationOptions.dissolve);
+  },
+
+  onDissolveComplete : function() {
+    this.onHide();
+    this._hide();
+    this.afterHide();
   },
 
   reveal : function(options) {
@@ -189,15 +197,27 @@ MooModal.Overlay = new new Class({
     else {
       this._show();
     }
-    this.transform(options).chain(function() {
-      this.onShow();
-      this._show();
-      this.onAfterShow();
+    this.transform('reveal',options).chain(function() {
     }.bind(this));
   },
 
-  transform : function(options) {
+  onRevealComplete : function() {
+    this.onShow();
+    this._show();
+    this.onAfterShow();
+  },
+
+  transform : function(direction,options) {
+    this.setAnimationDirection(direction);
     return this.getAnimator().start(options);
+  },
+
+  getAnimationDirection : function() {
+    return this.animationDirection;
+  },
+
+  setAnimationDirection : function(dir) {
+    this.animationDirection = dir;
   },
 
   getOpacity : function() {
@@ -227,6 +247,17 @@ MooModal.Overlay = new new Class({
       'right':0,
       'bottom':0
     });
+  },
+
+  onAnimationComplete : function() {
+    switch(this.getAnimationDirection()) {
+      case 'reveal':
+        this.onRevealComplete();
+      break;
+      case 'dissolve':
+        this.onDissolveComplete();
+      break;
+    }
   },
 
   onHide : function() {
@@ -512,9 +543,8 @@ MooModal.implement({
 
   hideEverything : function(fast) {
     fast ? this.hide : this.dissolve();
-    if(this.options.overlay) {
-      this.hideOverlay(fast);
-    }
+    fast = !fast && !this.options.overlay;
+    this.hideOverlay(fast);
   },
 
   hide : function() {
