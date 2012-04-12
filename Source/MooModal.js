@@ -54,6 +54,13 @@ MooModal.extend({
         return instance;
       }
     }
+  },
+
+  onResize : function() {
+
+  },
+
+  onScroll : function() {
   }
 
 });
@@ -185,7 +192,7 @@ MooModal.Overlay = new new Class({
   onDissolveComplete : function() {
     this.onHide();
     this._hide();
-    this.afterHide();
+    this.onAfterHide();
   },
 
   reveal : function(options) {
@@ -391,16 +398,6 @@ MooModal.implement({
         'bottom':0
       }
     }).inject(this.container);
-
-    this.stage.set('spinner',{
-      'class':klass+'-spinner',
-      'style' : {
-        'opacity':0.3,
-        'background-color':'#ffffff',
-        'left':0,
-        'top':0
-      }
-    });
 
     this.closeMooModal = new Element('div',{
       'class': klass + '-close',
@@ -657,7 +654,6 @@ MooModal.Image = new Class({
           }
         }.bind(this)
       });
-      this.getStage().spin();
       this.fireEvent('imageRequest');
     }
     else {
@@ -704,12 +700,10 @@ MooModal.Image = new Class({
     else {
       this.clear();
       attachImage(image);
-      this.setAsLoading(false);
       this.resize(this.getImageWidth(),this.getImageHeight());
       this.showEverything();
       return;
     }
-    this.getStage().unspin();
   },
 
   getImage : function() {
@@ -748,14 +742,12 @@ MooModal.Request = new Class({
     this.parent(options);
   },
 
-  hideEverything : function() {
+  onBeforeHide : function() {
     var req = this.getRequest();
     if(req) {
       req.cancel();
     }
-    else {
-      this.parent();
-    }
+    this.parent();
   },
 
   load : function(url,options) {
