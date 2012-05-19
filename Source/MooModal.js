@@ -1,6 +1,6 @@
 /*
 ---
-description: MooSelect is a full-fledged select, multiple select and autocomplete replacement for HTML forms.
+description: MooModal is a useful modal script for MooTools.
 
 license: MIT License http://www.opensource.org/licenses/mit-license.php
 
@@ -8,18 +8,18 @@ authors:
 - Matias Niemelä (matias [at] yearofmoo [dot] com)
 
 home:
-- http://www.yearofmoo.com/MooSelect
+- http://www.yearofmoo.com/MooModal
 
 requires:
 - core
-- more (Class.Refactor, Fx.Scroll, Locale.js)
-- optional (Form.Validator, Formular.js)
-- sprite.png
-- mooselect.css
+- more (Class.Binds, Fx.Scroll, Fx.Reveal)
+- MooModal.css
 
 provides: 
-- MooSelect
-- MooSelect.Remote
+- MooModal
+- MooModal.Image
+- MooModal.Request
+- MooModal.IFrame
 
 */
 var MooModal = new Class;
