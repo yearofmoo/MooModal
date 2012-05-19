@@ -1,0 +1,17 @@
+src:
+  input:
+    - Source/src/MooModal.License.js
+    - Source/src/MooModal.Base.js
+    - Source/src/MooModal.Image.js
+    - Source/src/MooModal.Request.js
+    - Source/src/MooModal.IFrame.js
+  output:
+    - Source/MooModal.js
+
+min:
+  filters:
+    - cat Source/MooModal.js | jsmin > %{output}
+  input:
+    - Source/MooModal.js
+  output:
+    - Source/MooModal.min.js
