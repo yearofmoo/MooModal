@@ -427,7 +427,7 @@ MooModal.implement({
       'events':{
         'click':this.hideEverything.bind(this)
       }
-    }).injectInside(this.container);
+    }).inject(this.container,'inside');
   },
 
   setupEvents : function() {
