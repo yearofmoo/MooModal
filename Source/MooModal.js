@@ -461,6 +461,15 @@ MooModal.implement({
     });
   },
 
+  positionAtTop : function(y) {
+    y = y || 100;
+    var w = this.getWidth();
+    var sc = window.getScrollSize();
+    var wc = window.getSize();
+    var x = Math.floor((sc.x - w)/2);
+    this.position(x,y);
+  },
+
   positionInCenter : function() {
     var w = this.getWidth();
     var h = this.getHeight();
@@ -552,11 +561,16 @@ MooModal.implement({
   },
 
   setAsLoading : function(bool) {
-    bool = bool || true;
-    var options = this.options.loadingOptions;
-    var klass = options.className;
-    var container = this.getContainer();
+    var stage = this.getStage();
+    var className = 'modal-loading';
+    if(bool) {
+      stage.addClass(className);
+    }
+    else {
+      stage.removeClass(className);
+    }
   },
+
 
   hideEverything : function(fast) {
     fast ? this.hide : this.dissolve();
@@ -628,15 +642,15 @@ MooModal.implement({
   },
 
   onBeforeShow : function() {
-
+    this.fireEvent('beforeShow',[this]);
   },
 
   onBeforeHide : function() {
-
+    this.fireEvent('beforeHide',[this]);
   },
 
   onAfterShow : function() {
-
+    this.fireEvent('afterShow',[this]);
   },
 
   onAfterHide : function() {
